@@ -8,68 +8,57 @@
 #endif
 
 
-struct pos_range
+typedef std::string bracket_char_t;
+typedef std::vector<bracket_char_t> bracket_string_t;
+
+bracket_string_t convert_to_bracket_string(const std::string & txt)
 {
-    pos_range()
-        : begin_(0), end_(0){}
-    pos_range(size_t begin, size_t end)
-        : begin_(begin), end_(end){}
-
-    operator bool() const { return !empty(); }
-    bool empty() const { return begin_ >= end_; }
-    size_t back() const { return end_ - 1; }
-    size_t begin_;
-    size_t end_;
-};
-
-pos_range find_matched_bracket_pos(const std::string & txt, size_t from)
-{
-    if (from >= txt.length())
-        return pos_range();
-
-    for(size_t i = from; i < txt.length() -1; ++i)
+    bracket_string_t result;
+    for (size_t i = 0 ; i < txt.length() ; ++i)
     {
-        if (txt[i] == '<' || txt[i] == '>' 
-            || txt[i] == '{' || txt[i] == '}' 
-            || txt[i] == ')')
+        if(txt[i] == '(')
         {
-            return pos_range(i, i+1);
-        }
-
-        if (txt[i] == '(')
-        {
-            if (txt[i + 1] == '*')
+            if (i+1<txt.length() && txt[i+1] == '*')
             {
-                return pos_range(i, i + 2);
+                result.push_back(txt.substr(i, 2));
+                ++i;
             }
             else
             {
-                return pos_range(i, i + 1);
+                result.push_back(txt.substr(i, 1));
             }
         }
-
-        if (txt[i] == '*' && txt[i + 1] == ')')
+        else if(txt[i] == '*')
         {
-            return pos_range(i, i + 2);
+            if (i + 1 < txt.length() && txt[i + 1] == ')')
+            {
+                result.push_back(txt.substr(i, 2));
+                ++i;
+            }
+            else
+            {
+                result.push_back(txt.substr(i, 1));
+            }
+        }
+        else
+        {
+            result.push_back(txt.substr(i, 1));
         }
     }
-
-    if (txt.back() == '<' || txt.back() == '>'
-        || txt.back() == '{' || txt.back() == '}'
-        || txt.back() == '(' || txt.back() == ')')
-    {
-        return pos_range(txt.length() - 1, 1);
-    }
-
-    return pos_range();
+    return result;
 }
 
-bool is_open_bracket(const std::string & bracket)
+bool is_open_bracket(const bracket_char_t & bracket)
 {
-    return (bracket == "<" || bracket == "{" || bracket == "(" || bracket == "(*");
+    return (bracket == "<" || bracket == "{" || bracket == "(" || bracket == "[" || bracket == "(*");
 }
 
-std::string get_matched_open_bracket(const std::string & close_bracket)
+bool is_close_bracket(const bracket_char_t & bracket)
+{
+    return (bracket == ">" || bracket == "}" || bracket == ")" || bracket == "]" || bracket == "*)");
+}
+
+bracket_char_t get_matched_open_bracket(const bracket_char_t & close_bracket)
 {
     if (close_bracket == ">")
         return "<";
@@ -79,60 +68,47 @@ std::string get_matched_open_bracket(const std::string & close_bracket)
         return "(*";
     if (close_bracket == "}")
         return "{";
+    if (close_bracket == "]")
+        return "[";
 
     return "";
 }
 
-bool check_brackets_matched(const std::string & txt, size_t & first_unmatched_pos)
+bool check_brackets_matched(const std::string & txt, size_t & error_pos)
 {
-    struct bracket_info_t
+    bracket_string_t bracket_string = convert_to_bracket_string(txt);
+    std::vector<bracket_char_t> umached_open_brackets;
+    for (size_t i = 0 ; i < bracket_string.size() ; ++i)
     {
-        std::string bracket;
-        pos_range pos;
-    };
-    std::vector<bracket_info_t> brackets;
-
-    size_t current_pos(0);
-    while (pos_range bracket_pos = find_matched_bracket_pos(txt, current_pos))
-    {
-        std::string bracket = txt.substr(bracket_pos.begin_, bracket_pos.end_ - bracket_pos.begin_);
-        
-        if (is_open_bracket(bracket))
+        if (is_open_bracket(bracket_string[i]))
         {
-            bracket_info_t bracket_info;
-            bracket_info.bracket = bracket;
-            bracket_info.pos = bracket_pos;
-            brackets.push_back(bracket_info);
+            umached_open_brackets.push_back(bracket_string[i]);
         }
-        else
-        { // is close bracket
-            if (brackets.empty())
+        else if(is_close_bracket(bracket_string[i]))
+        {
+            if (umached_open_brackets.empty())
             {
-                first_unmatched_pos = bracket_pos.back();
+                error_pos = i;
                 return false;
             }
             else
             {
-                if (get_matched_open_bracket(bracket) == brackets.back().bracket)
+                if (get_matched_open_bracket(bracket_string[i]) == umached_open_brackets.back())
                 {
-                    brackets.pop_back();
+                    umached_open_brackets.pop_back();
                 }
                 else
                 {
-                    first_unmatched_pos = brackets.back().pos.back();
+                    error_pos = i;
                     return false;
                 }
             }
         }
-
-
-        // to find next
-        current_pos = bracket_pos.end_;
     }
 
-    if (brackets.size() != 0)
+    if (umached_open_brackets.size() != 0)
     {
-        first_unmatched_pos = brackets.back().pos.back();
+        error_pos = bracket_string.size();
         return false;
     }
 
@@ -143,16 +119,16 @@ void run(std::istream & in, std::ostream & out)
 {
     std::string input;
 
-    while (in >> input)
+    while (getline(in, input))
     {
-        size_t first_unmatched_pos(0);
-        if (check_brackets_matched(input, first_unmatched_pos))
+        size_t error_pos(0);
+        if (check_brackets_matched(input, error_pos))
         {
             out << "YES" << std::endl;
         }
         else
         {
-            out << "NO " << first_unmatched_pos << std::endl;
+            out << "NO " << error_pos + 1 << std::endl;
         }
     }
 }
