@@ -8,12 +8,12 @@
 #endif
 
 
-typedef std::string bracket_char_t;
-typedef std::vector<bracket_char_t> bracket_string_t;
+typedef std::string expression_char_t;
+typedef std::vector<expression_char_t> expression_t;
 
-bracket_string_t convert_to_bracket_string(const std::string & txt)
+expression_t convert_to_expression(const std::string & txt)
 {
-    bracket_string_t result;
+    expression_t result;
     for (size_t i = 0 ; i < txt.length() ; ++i)
     {
         if(txt[i] == '(')
@@ -48,17 +48,17 @@ bracket_string_t convert_to_bracket_string(const std::string & txt)
     return result;
 }
 
-bool is_open_bracket(const bracket_char_t & bracket)
+bool is_open_bracket(const expression_char_t & bracket)
 {
     return (bracket == "<" || bracket == "{" || bracket == "(" || bracket == "[" || bracket == "(*");
 }
 
-bool is_close_bracket(const bracket_char_t & bracket)
+bool is_close_bracket(const expression_char_t & bracket)
 {
     return (bracket == ">" || bracket == "}" || bracket == ")" || bracket == "]" || bracket == "*)");
 }
 
-bracket_char_t get_matched_open_bracket(const bracket_char_t & close_bracket)
+expression_char_t get_matched_open_bracket(const expression_char_t & close_bracket)
 {
     if (close_bracket == ">")
         return "<";
@@ -74,17 +74,16 @@ bracket_char_t get_matched_open_bracket(const bracket_char_t & close_bracket)
     return "";
 }
 
-bool check_brackets_matched(const std::string & txt, size_t & error_pos)
+bool check_expression_nested(const expression_t & expression, size_t & error_pos)
 {
-    bracket_string_t bracket_string = convert_to_bracket_string(txt);
-    std::vector<bracket_char_t> umached_open_brackets;
-    for (size_t i = 0 ; i < bracket_string.size() ; ++i)
+    std::vector<expression_char_t> umached_open_brackets;
+    for (size_t i = 0 ; i < expression.size() ; ++i)
     {
-        if (is_open_bracket(bracket_string[i]))
+        if (is_open_bracket(expression[i]))
         {
-            umached_open_brackets.push_back(bracket_string[i]);
+            umached_open_brackets.push_back(expression[i]);
         }
-        else if(is_close_bracket(bracket_string[i]))
+        else if(is_close_bracket(expression[i]))
         {
             if (umached_open_brackets.empty())
             {
@@ -93,7 +92,7 @@ bool check_brackets_matched(const std::string & txt, size_t & error_pos)
             }
             else
             {
-                if (get_matched_open_bracket(bracket_string[i]) == umached_open_brackets.back())
+                if (get_matched_open_bracket(expression[i]) == umached_open_brackets.back())
                 {
                     umached_open_brackets.pop_back();
                 }
@@ -108,7 +107,7 @@ bool check_brackets_matched(const std::string & txt, size_t & error_pos)
 
     if (umached_open_brackets.size() != 0)
     {
-        error_pos = bracket_string.size();
+        error_pos = expression.size();
         return false;
     }
 
@@ -122,7 +121,7 @@ void run(std::istream & in, std::ostream & out)
     while (getline(in, input))
     {
         size_t error_pos(0);
-        if (check_brackets_matched(input, error_pos))
+        if (check_expression_nested(convert_to_expression(input), error_pos))
         {
             out << "YES" << std::endl;
         }
@@ -182,3 +181,4 @@ int main(int argc, char** argv)
     return 0;
 }
 #endif
+
