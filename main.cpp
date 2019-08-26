@@ -16,7 +16,7 @@ expression_t convert_to_expression(const std::string & txt)
     expression_t result;
     for (size_t i = 0 ; i < txt.length() ; ++i)
     {
-        if(txt[i] == '(')
+        if (txt[i] == '(')
         {
             if (i+1<txt.length() && txt[i+1] == '*')
             {
@@ -28,7 +28,7 @@ expression_t convert_to_expression(const std::string & txt)
                 result.push_back(txt.substr(i, 1));
             }
         }
-        else if(txt[i] == '*')
+        else if (txt[i] == '*')
         {
             if (i + 1 < txt.length() && txt[i + 1] == ')')
             {
@@ -83,7 +83,7 @@ bool check_expression_nested(const expression_t & expression, size_t & error_pos
         {
             umached_open_brackets.push_back(expression[i]);
         }
-        else if(is_close_bracket(expression[i]))
+        else if (is_close_bracket(expression[i]))
         {
             if (umached_open_brackets.empty() == false
                 && umached_open_brackets.back() == get_matched_open_bracket(expression[i]))
