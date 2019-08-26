@@ -85,22 +85,15 @@ bool check_expression_nested(const expression_t & expression, size_t & error_pos
         }
         else if(is_close_bracket(expression[i]))
         {
-            if (umached_open_brackets.empty())
+            if (umached_open_brackets.empty() == false
+                && umached_open_brackets.back() == get_matched_open_bracket(expression[i]))
             {
-                error_pos = i;
-                return false;
+                umached_open_brackets.pop_back();
             }
             else
             {
-                if (get_matched_open_bracket(expression[i]) == umached_open_brackets.back())
-                {
-                    umached_open_brackets.pop_back();
-                }
-                else
-                {
-                    error_pos = i;
-                    return false;
-                }
+                error_pos = i;
+                return false;
             }
         }
     }
@@ -181,4 +174,3 @@ int main(int argc, char** argv)
     return 0;
 }
 #endif
-
